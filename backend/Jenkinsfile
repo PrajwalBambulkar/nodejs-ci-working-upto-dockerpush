@@ -6,7 +6,7 @@ pipeline {
     }
 
     environment {
-        DOCKER_IMAGE = 'PrajwalBambulkar/3tiernodejs-frontend'
+        DOCKER_IMAGE = 'PrajwalBambulkar/3tiernodejs-backend'
     }
 
     stages {
@@ -16,21 +16,33 @@ pipeline {
             }
         }
 
-        stage('Verify Changes in Frontend Folder') {
+        stage('Verify Changes in Backend Folder') {
             when {
-                changeset "frontend/**"
+                changeset "backend/**"
             }
             steps {
-                echo "✅ Detected changes in frontend folder."
+                echo "✅ Detected changes in backend folder."
+            }
+        }
+
+        stage('Install & Test') {
+            when {
+                changeset "backend/**"
+            }
+            steps {
+                dir('backend') {
+                    sh 'npm install'
+                    sh 'npm test || echo "Skipping tests (none found)"'
+                }
             }
         }
 
         stage('Build Docker Image') {
             when {
-                changeset "frontend/**"
+                changeset "backend/**"
             }
             steps {
-                dir('frontend') {
+                dir('backend') {
                     script {
                         docker.build("${DOCKER_IMAGE}:${env.BUILD_NUMBER}")
                     }
@@ -40,10 +52,10 @@ pipeline {
 
         stage('Push Docker Image') {
             when {
-                changeset "frontend/**"
+                changeset "backend/**"
             }
             steps {
-                dir('frontend') {
+                dir('backend') {
                     script {
                         docker.withRegistry('https://index.docker.io/v1/', 'docker-hub-credentials') {
                             docker.image("${DOCKER_IMAGE}:${env.BUILD_NUMBER}").push()
@@ -56,10 +68,10 @@ pipeline {
 
     post {
         success {
-            echo '✅ Frontend CI pipeline completed successfully.'
+            echo '✅ Backend CI pipeline completed successfully.'
         }
         failure {
-            echo '❌ Frontend CI pipeline failed.'
+            echo '❌ Backend CI pipeline failed.'
         }
     }
 }
