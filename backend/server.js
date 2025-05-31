@@ -1,28 +1,26 @@
+// server.js
+
 const express = require('express');
 const bodyParser = require('body-parser');
-const cors = require('cors');
-const db = require('./db');
-
+const db = require('./db'); // db.js uses createPool
 const app = express();
-app.use(cors());
+
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
-// POST route to handle form submission
 app.post('/submit', (req, res) => {
     const { first_name, last_name } = req.body;
-    const sql = 'INSERT INTO users (first_name, last_name) VALUES (?, ?)';
-    
-    db.query(sql, [first_name, last_name], (err, result) => {
+    const query = 'INSERT INTO users (first_name, last_name) VALUES (?, ?)';
+    db.query(query, [first_name, last_name], (err, results) => {
         if (err) {
-            console.error('Error inserting data: ', err);
+            console.error('Insert error:', err);
             return res.status(500).send('Database error');
         }
-        res.send('Data inserted successfully');
+        res.send('Data submitted successfully!');
     });
 });
 
-app.listen(80, () => {
-    console.log('Server started on http://100.0.0.4:80');
+app.listen(3000, () => {
+    console.log('Backend server running on port 3000');
 });
 
