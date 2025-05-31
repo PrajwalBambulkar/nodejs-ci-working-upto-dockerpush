@@ -1,0 +1,66 @@
+pipeline {
+    agent any
+
+    options {
+        skipDefaultCheckout()
+    }
+
+    environment {
+        DOCKER_IMAGE = 'PrajwalBambulkar/3tiernodejs-frontend'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Verify Changes in Frontend Folder') {
+            when {
+                changeset "frontend/**"
+            }
+            steps {
+                echo "✅ Detected changes in frontend folder."
+            }
+        }
+
+        stage('Build Docker Image') {
+            when {
+                changeset "frontend/**"
+            }
+            steps {
+                dir('frontend') {
+                    script {
+                        docker.build("${DOCKER_IMAGE}:${env.BUILD_NUMBER}")
+                    }
+                }
+            }
+        }
+
+        stage('Push Docker Image') {
+            when {
+                changeset "frontend/**"
+            }
+            steps {
+                dir('frontend') {
+                    script {
+                        docker.withRegistry('https://index.docker.io/v1/', 'docker-hub-credentials') {
+                            docker.image("${DOCKER_IMAGE}:${env.BUILD_NUMBER}").push()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo '✅ Frontend CI pipeline completed successfully.'
+        }
+        failure {
+            echo '❌ Frontend CI pipeline failed.'
+        }
+    }
+}
+
