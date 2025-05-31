@@ -1,18 +1,16 @@
-
-
 pipeline {
     agent any
 
     environment {
         IMAGE_NAME = 'prajwalbambulkar/3tiernodejs-frontend'
-        DOCKER_USER = 'prajwalbambulkar'
-        DOCKER_PASS = '@#$Admin@#$12345'
     }
 
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/PrajwalBambulkar/3tiernodejs.git'
+                git credentialsId: 'github-credentials',
+                    branch: 'main',
+                    url: 'https://github.com/PrajwalBambulkar/3tiernodejs.git'
             }
         }
 
@@ -24,10 +22,12 @@ pipeline {
 
         stage('Push Docker Image') {
             steps {
-                sh '''
-                  echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
-                  docker push ${IMAGE_NAME}:${BUILD_NUMBER}
-                '''
+                withCredentials([usernamePassword(credentialsId: '03b85bf0-3391-428c-bd80-0fce51e052b5', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh '''
+                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                        docker push ${IMAGE_NAME}:${BUILD_NUMBER}
+                    '''
+                }
             }
         }
     }
