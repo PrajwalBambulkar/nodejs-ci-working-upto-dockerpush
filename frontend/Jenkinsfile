@@ -1,27 +1,16 @@
 pipeline {
     agent any
 
-    options {
-        skipDefaultCheckout()
-    }
-
     environment {
-        DOCKER_IMAGE = 'PrajwalBambulkar/3tiernodejs-frontend'
+        DOCKER_IMAGE = 'prajwalbambulkar/3tiernodejs-frontend'
+        IMAGE_TAG = "${env.BUILD_NUMBER}"
+        DOCKER_CREDENTIALS_ID = 'docker-hub-credentials' // Make sure this matches the Jenkins credentials ID
     }
 
     stages {
         stage('Checkout') {
             steps {
                 checkout scm
-            }
-        }
-
-        stage('Verify Changes in Frontend Folder') {
-            when {
-                changeset "frontend/**"
-            }
-            steps {
-                echo "✅ Detected changes in frontend folder."
             }
         }
 
@@ -32,7 +21,9 @@ pipeline {
             steps {
                 dir('frontend') {
                     script {
-                        docker.build("${DOCKER_IMAGE}:${env.BUILD_NUMBER}")
+                        echo "🔧 Building Docker image: ${DOCKER_IMAGE}:${IMAGE_TAG}"
+                        def image = docker.build("${DOCKER_IMAGE}:${IMAGE_TAG}")
+                        docker.image("${DOCKER_IMAGE}:${IMAGE_TAG}").inspect()
                     }
                 }
             }
@@ -45,8 +36,9 @@ pipeline {
             steps {
                 dir('frontend') {
                     script {
-                        docker.withRegistry('https://index.docker.io/v1/', 'docker-hub-credentials') {
-                            docker.image("${DOCKER_IMAGE}:${env.BUILD_NUMBER}").push()
+                        echo "📤 Pushing Docker image to DockerHub"
+                        docker.withRegistry('https://index.docker.io/v1/', DOCKER_CREDENTIALS_ID) {
+                            docker.image("${DOCKER_IMAGE}:${IMAGE_TAG}").push()
                         }
                     }
                 }
@@ -63,4 +55,3 @@ pipeline {
         }
     }
 }
-
