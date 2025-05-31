@@ -12,7 +12,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                checkout scm
+                checkout changelog: true, poll: true,scm: scm
             }
         }
 
